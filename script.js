@@ -833,10 +833,12 @@ function updatePetCardFromState() {
     if (petCaloriesDisplay) petCaloriesDisplay.textContent = dailyCalories > 0 ? `${Math.round(dailyCalories)} kcal` : '— kcal';
     if (petActivityDisplay) petActivityDisplay.textContent = ACTIVITY_LABELS[activity] || '—';
 
-    const statusBtns = petCard.querySelectorAll('.pet-status-btn');
-    statusBtns.forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.status === healthStatus);
-    });
+    const statusBtn = petCard.querySelector('.pet-status-btn');
+    if (statusBtn) {
+        statusBtn.dataset.status = healthStatus;
+        statusBtn.textContent = healthStatus === 'sick' ? '生病' : '健康';
+        statusBtn.classList.toggle('pet-status-btn--sick', healthStatus === 'sick');
+    }
 
     if (petPhotoDataUrl && petPhotoDisplay) {
         petPhotoDisplay.src = petPhotoDataUrl;
@@ -1106,16 +1108,22 @@ document.addEventListener('DOMContentLoaded', () => {
         infoModalBackdrop?.addEventListener('click', closeModal);
     }
 
-    petCard?.querySelectorAll('.pet-status-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
+    const statusToggle = petCard?.querySelector('.pet-status-btn');
+    if (statusToggle) {
+        statusToggle.addEventListener('click', () => {
             const statusHidden = document.getElementById('healthStatus');
-            if (statusHidden) statusHidden.value = btn.dataset.status;
-            petCard.querySelectorAll('.pet-status-btn').forEach((b) => b.classList.toggle('active', b === btn));
+            const current = statusHidden?.value || 'healthy';
+            const next = current === 'healthy' ? 'sick' : 'healthy';
+            if (statusHidden) statusHidden.value = next;
             updateDailyCaloriesFromWeight();
             updateMealResultsRealtime();
             updatePetCardFromState();
+            // 同步表單內的狀態選項按鈕外觀
+            document.querySelectorAll('.option-btn[data-field="healthStatus"]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.value === next);
+            });
         });
-    });
+    }
 
     petBirthInput?.addEventListener('input', () => {
         updatePetAgeBlock();

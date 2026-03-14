@@ -188,38 +188,35 @@ body {
 
 .pet-stat--status {
     grid-column: span 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .pet-status-buttons {
     display: flex;
     gap: 8px;
-    margin-top: 4px;
 }
 
 .pet-status-btn {
     padding: 6px 14px;
     border-radius: 999px;
     border: 1px solid #e2e8f0;
-    background: #fff;
+    background: linear-gradient(145deg, #68d391 0%, #48bb78 100%);
     font-size: 13px;
-    font-weight: 600;
-    color: #4a5568;
+    font-weight: 700;
+    color: #fff;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, filter 0.2s;
 }
 
 .pet-status-btn:hover {
-    background: #f7fafc;
+    filter: brightness(0.96);
 }
 
-.pet-status-btn.active {
-    background: linear-gradient(145deg, #68d391 0%, #48bb78 100%);
-    color: #fff;
-    border-color: transparent;
-}
-
-.pet-status-btn[data-status="sick"].active {
+.pet-status-btn--sick {
     background: linear-gradient(145deg, #fc8181 0%, #f56565 100%);
+    border-color: transparent;
 }
 
 .pet-stat {
@@ -259,6 +256,12 @@ body {
     font-size: 12px;
     font-weight: 500;
     color: #a0aec0;
+}
+
+.pet-status-label-main {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4a5568;
 }
 
 #petAgeDisplay.pet-stat-value {

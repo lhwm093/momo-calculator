@@ -6,20 +6,69 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Momo 幼貓飲食計算器</title>
-    <meta name="theme-color" content="#4299e1">
+    <meta name="theme-color" content="#ed8936">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🐱 Momo 幼貓飲食計算器</h1>
-            <p class="subtitle">給年輕鏟屎官的輕巧小工具</p>
+        <header class="app-header">
+            <span class="header-emoji">🐱</span>
         </header>
 
+        <!-- 寵物身分證（有儲存資料時顯示） -->
+        <section id="petCard" class="pet-card" style="display: none;">
+            <div class="pet-avatar">
+                <img id="petPhotoDisplay" alt="pet avatar">
+                <span id="petAvatarFallback" class="pet-avatar-fallback">🐱</span>
+            </div>
+            <div class="pet-meta">
+                <div class="pet-meta-header">
+                    <div>
+                        <div id="petNameDisplay" class="pet-meta-name">小貓</div>
+                        <div id="petAgeDisplay" class="pet-meta-sub">年齡：—</div>
+                    </div>
+                    <button type="button" id="editPetButton" class="pet-edit-btn">✏️ 編輯</button>
+                </div>
+                <div class="pet-meta-row">
+                    <span class="pet-meta-label">體重</span>
+                    <span id="petWeightDisplay" class="pet-meta-value">— kg</span>
+                </div>
+                <div class="pet-meta-row">
+                    <span class="pet-meta-label">每日熱量</span>
+                    <span id="petCaloriesDisplay" class="pet-meta-value">— kcal</span>
+                </div>
+            </div>
+        </section>
+
         <form id="calculatorForm">
+            <!-- 寵物基本資料（選填） -->
+            <section class="input-section pet-info-section">
+                <label>寵物基本資料（選填）</label>
+                <div class="pet-info-grid">
+                    <div class="pet-info-field">
+                        <label for="petName">寵物名字</label>
+                        <input type="text" id="petName" placeholder="例如：Momo">
+                    </div>
+                    <div class="pet-info-field">
+                        <label for="petBirth">出生日期</label>
+                        <input type="date" id="petBirth">
+                    </div>
+                </div>
+                <div class="pet-photo-upload">
+                    <label for="petPhoto">寵物照片（選填）</label>
+                    <div class="pet-photo-row">
+                        <div class="pet-photo-preview">
+                            <img id="petPhotoPreview" alt="預覽" style="display: none;">
+                            <span id="petPhotoPreviewFallback">🐾</span>
+                        </div>
+                        <input type="file" id="petPhoto" accept="image/*">
+                    </div>
+                </div>
+            </section>
+
             <!-- 幼貓重量 -->
             <section class="input-section weight-section">
-                <label for="catWeight">1. 幼貓重量（公斤）</label>
+                <label for="catWeight">幼貓重量（公斤）</label>
                 <input type="number" id="catWeight" step="0.01" min="0.1" max="8" required placeholder="例如：1.60">
                 <div class="weight-slider-row">
                     <input type="range" id="catWeightSlider" min="0.1" max="8" step="0.01">
@@ -30,12 +79,14 @@
 
             <!-- 顯示每日熱量（隨重量即時更新） -->
             <div id="dailyCaloriesResult" class="result-box" style="display: none;">
-                <h3>每日所需熱量：<span id="dailyCalories">—</span> 卡路里</h3>
+                <h3>每日所需熱量</h3>
+                <span id="dailyCalories" class="result-number">—</span>
+                <span class="result-unit">kcal/日</span>
             </div>
 
             <!-- 乾糧資訊 -->
             <section class="input-section">
-                <label for="dryFoodCalories">2. 🥘 乾糧每公斤卡路里</label>
+                <label for="dryFoodCalories">🥘 乾糧每公斤卡路里</label>
                 <input type="number" id="dryFoodCalories" step="1" min="1" placeholder="例如：3500">
                 <button type="button" class="btn-toggle" id="toggleDryPack">顯示每包重量</button>
                 <div id="dryPackInfo" style="display: none;" class="pack-info">
@@ -46,7 +97,7 @@
 
             <!-- 濕糧資訊 -->
             <section class="input-section">
-                <label for="wetFoodCalories">3. 🍖 濕糧每公斤卡路里</label>
+                <label for="wetFoodCalories">🍖 濕糧每公斤卡路里</label>
                 <input type="number" id="wetFoodCalories" step="1" min="1" placeholder="例如：1000">
                 <button type="button" class="btn-toggle" id="toggleWetPack">顯示每包重量</button>
                 <div id="wetPackInfo" style="display: none;" class="pack-info">
@@ -57,7 +108,7 @@
 
             <!-- 每天幾頓飯（按鈕 1 / 2 / 3 頓） -->
             <section class="input-section">
-                <label>4. 每天吃幾頓飯</label>
+                <label>每天吃幾頓飯</label>
                 <div class="meals-buttons" role="group">
                     <button type="button" class="meals-btn" data-value="1">1 頓</button>
                     <button type="button" class="meals-btn active" data-value="2">2 頓</button>
@@ -68,7 +119,7 @@
 
             <!-- 比例模式切換 -->
             <section class="input-section ratio-mode-section">
-                <label>5. 🥘🍖 乾濕糧比例模式</label>
+                <label>🥘🍖 乾濕糧比例模式</label>
                 <div class="ratio-mode-toggle">
                     <label class="toggle-pill">
                         <input type="radio" name="ratioMode" id="ratioModeFixed" value="fixed" checked>
@@ -83,7 +134,7 @@
 
             <!-- 每餐固定乾糧濕糧比例（拖拉式） -->
             <section class="input-section ratio-fixed-section" id="ratioFixedSection">
-                <label class="section-label">6. 🥘🍖 每餐固定乾糧／濕糧比例</label>
+                <label class="section-label">🥘🍖 每餐固定乾糧／濕糧比例</label>
                 <p class="section-hint">所有餐次使用相同比例，拖拉滑桿調整，乾+濕=100%</p>
                 <div class="ratio-slider-row">
                     <div class="ratio-slider-item">
@@ -99,7 +150,7 @@
 
             <!-- 每餐乾糧濕糧比例（依餐數動態產生，每餐可不同） -->
             <section class="input-section ratio-per-meal-section" id="ratioPerMealSection" style="display: none;">
-                <label class="section-label">6. 🥘🍖 每餐乾糧／濕糧比例（每餐可不同）</label>
+                <label class="section-label">🥘🍖 每餐乾糧／濕糧比例（每餐可不同）</label>
                 <p class="section-hint">可為每一餐設定不同的乾糧與濕糧比例，單餐兩者加總須為 100%</p>
                 <div id="mealRatiosContainer" class="meal-ratios-container"></div>
                 <div id="ratioError" class="error-message" style="display: none;"></div>
@@ -107,7 +158,7 @@
 
             <!-- 每公斤喝水量（三選一按鈕） -->
             <section class="input-section">
-                <label>7. 💧 每公斤喝水量（mL）</label>
+                <label>💧 每公斤喝水量（mL）</label>
                 <div class="water-buttons" role="group">
                     <button type="button" class="water-btn" data-value="40">40 mL</button>
                     <button type="button" class="water-btn active" data-value="50">50 mL</button>
@@ -118,13 +169,13 @@
 
             <!-- 第一餐時間 -->
             <section class="input-section">
-                <label for="firstMealTime">8. 第一餐用餐時間</label>
+                <label for="firstMealTime">第一餐用餐時間</label>
                 <input type="time" id="firstMealTime" required>
             </section>
 
             <!-- 每頓飯相隔時間（拖拉式） -->
             <section class="input-section">
-                <label for="mealIntervalSlider">9. 每頓飯相隔多久</label>
+                <label for="mealIntervalSlider">每頓飯相隔多久</label>
                 <div class="interval-slider-row">
                     <input type="range" id="mealIntervalSlider" min="4" max="6" value="5" step="1">
                     <span class="interval-slider-value" id="mealIntervalDisplay">5 小時</span>
@@ -145,6 +196,7 @@
             <h2>📋 每餐分配結果</h2>
             <div id="mealResults"></div>
         </div>
+
     </div>
 
     <script src="script.js"></script>

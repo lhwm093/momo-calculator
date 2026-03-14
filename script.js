@@ -36,6 +36,30 @@ const waterPerKgInput = document.getElementById('waterPerKg');
 const catWeightInput = document.getElementById('catWeight');
 const catWeightSlider = document.getElementById('catWeightSlider');
 const catWeightDisplay = document.getElementById('catWeightDisplay');
+const petNameInput = document.getElementById('petName');
+const petBirthInput = document.getElementById('petBirth');
+const petPhotoInput = document.getElementById('petPhoto');
+const petPhotoPreview = document.getElementById('petPhotoPreview');
+const petPhotoPreviewFallback = document.getElementById('petPhotoPreviewFallback');
+const petCard = document.getElementById('petCard');
+const petPhotoDisplay = document.getElementById('petPhotoDisplay');
+const petAvatarFallback = document.getElementById('petAvatarFallback');
+const petNameDisplay = document.getElementById('petNameDisplay');
+const petAgeDisplay = document.getElementById('petAgeDisplay');
+const petWeightDisplay = document.getElementById('petWeightDisplay');
+const petCaloriesDisplay = document.getElementById('petCaloriesDisplay');
+const editPetButton = document.getElementById('editPetButton');
+const calculatorForm = document.getElementById('calculatorForm');
+
+let petPhotoDataUrl = '';
+
+function showForm() {
+    if (calculatorForm) calculatorForm.style.display = 'block';
+}
+
+function hideForm() {
+    if (calculatorForm) calculatorForm.style.display = 'none';
+}
 
 // 計算每日熱量
 function calculateDailyCalories(weight) {
@@ -130,8 +154,10 @@ function syncMealRatioPair(e) {
     const val = parseInt(slider.value) || 0;
     const otherVal = 100 - val;
     otherSlider.value = String(otherVal);
-    drySpan.textContent = mealRatiosContainer.querySelector(`.ratio-range[data-meal="${meal}"][data-type="dry"]`).value;
-    wetSpan.textContent = otherSlider.value;
+    const drySlider = mealRatiosContainer.querySelector(`.ratio-range[data-meal="${meal}"][data-type="dry"]`);
+    const wetSlider = mealRatiosContainer.querySelector(`.ratio-range[data-meal="${meal}"][data-type="wet"]`);
+    drySpan.textContent = drySlider ? drySlider.value : '0';
+    wetSpan.textContent = wetSlider ? wetSlider.value : '0';
 }
 
 
@@ -363,7 +389,10 @@ function collectSettings() {
         firstMealTime: document.getElementById('firstMealTime').value || '',
         mealInterval: document.getElementById('mealInterval').value || '',
         dailyCalories,
-        ratioMode: getRatioMode()
+        ratioMode: getRatioMode(),
+        petName: petNameInput ? petNameInput.value : '',
+        petBirth: petBirthInput ? petBirthInput.value : '',
+        petPhoto: petPhotoDataUrl || ''
     };
 
     if (settings.ratioMode === 'perMeal' && mealsPerDay >= 2) {
@@ -401,6 +430,18 @@ function applySettings(settings) {
     document.querySelectorAll('.water-btn').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.value === (settings.waterPerKg || '50'));
     });
+
+    // 寵物基本資料
+    if (petNameInput) petNameInput.value = settings.petName || '';
+    if (petBirthInput) petBirthInput.value = settings.petBirth || '';
+    if (settings.petPhoto) {
+        petPhotoDataUrl = settings.petPhoto;
+        if (petPhotoPreview) {
+            petPhotoPreview.src = petPhotoDataUrl;
+            petPhotoPreview.style.display = 'block';
+        }
+        if (petPhotoPreviewFallback) petPhotoPreviewFallback.style.display = 'none';
+    }
 
     if (settings.mealsPerDay) {
         const n = Math.min(3, Math.max(1, parseInt(settings.mealsPerDay) || 2));
@@ -472,6 +513,91 @@ function applySettings(settings) {
     updateMealResultsRealtime();
 }
 
+// 計算年齡文字（依出生日期，顯示為：X 年&X個月、X 個月&X日 或 X 日）
+function formatPetAge(birthStr) {
+    if (!birthStr) return '年齡：—';
+    const birth = new Date(birthStr);
+    if (isNaN(birth.getTime())) return '年齡：—';
+    const now = new Date();
+    if (birth > now) return '年齡：—';
+
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    let days = now.getDate() - birth.getDate();
+
+    if (days < 0) {
+        // 向前借一個月的天數
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+        months -= 1;
+    }
+    if (months < 0) {
+        months += 12;
+        years -= 1;
+    }
+
+    // 全部為 0 的極端情況（同一天出生）
+    if (years <= 0 && months <= 0 && days <= 0) {
+        return '年齡：0 日';
+    }
+
+    // 小於 1 個月：只顯示 X 日
+    if (years <= 0 && months <= 0) {
+        return `年齡：${days} 日`;
+    }
+
+    // 小於 1 年：顯示 X 個月 & X日（若天數為 0 則只顯示個月）
+    if (years <= 0) {
+        if (days > 0) {
+            return `年齡：${months} 個月&${days}日`;
+        }
+        return `年齡：${months} 個月`;
+    }
+
+    // 大於等於 1 年：顯示 X 年 & X個月（忽略天數）
+    if (months > 0) {
+        return `年齡：${years} 年&${months}個月`;
+    }
+    return `年齡：${years} 年`;
+}
+
+// 更新寵物身分證卡片顯示
+function updatePetCardFromState() {
+    if (!petCard) return;
+    const hasAnyInfo =
+        (petNameInput && petNameInput.value) ||
+        (petBirthInput && petBirthInput.value) ||
+        (catWeightInput && catWeightInput.value) ||
+        dailyCalories > 0 ||
+        petPhotoDataUrl;
+
+    if (!hasAnyInfo) {
+        petCard.style.display = 'none';
+        return;
+    }
+
+    const name = (petNameInput && petNameInput.value.trim()) || '小貓';
+    const birth = petBirthInput ? petBirthInput.value : '';
+    const ageText = formatPetAge(birth);
+    const weight = parseFloat(catWeightInput.value) || 0;
+
+    if (petNameDisplay) petNameDisplay.textContent = name;
+    if (petAgeDisplay) petAgeDisplay.textContent = ageText;
+    if (petWeightDisplay) petWeightDisplay.textContent = weight > 0 ? `${weight.toFixed(2)} kg` : '— kg';
+    if (petCaloriesDisplay) petCaloriesDisplay.textContent = dailyCalories > 0 ? `${Math.round(dailyCalories)} kcal` : '— kcal';
+
+    if (petPhotoDataUrl && petPhotoDisplay) {
+        petPhotoDisplay.src = petPhotoDataUrl;
+        petPhotoDisplay.style.display = 'block';
+        if (petAvatarFallback) petAvatarFallback.style.display = 'none';
+    } else {
+        if (petPhotoDisplay) petPhotoDisplay.style.display = 'none';
+        if (petAvatarFallback) petAvatarFallback.style.display = 'block';
+    }
+
+    petCard.style.display = 'flex';
+}
+
 function showSaveMessage(text, isError = false) {
     if (!saveMessage) return;
     saveMessage.textContent = text;
@@ -488,7 +614,9 @@ function handleSaveSettings() {
     try {
         const data = collectSettings();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        updatePetCardFromState();
         showSaveMessage('已儲存這次設定，下次打開會自動套用。');
+        hideForm();
     } catch (e) {
         showSaveMessage('儲存失敗，請稍後再試。', true);
     }
@@ -583,6 +711,7 @@ function updateMealResultsRealtime() {
     } else {
         resultsSection.style.display = 'none';
     }
+    updatePetCardFromState();
 }
 
 // 格式化重量顯示（幾包+幾克）
@@ -615,11 +744,13 @@ function displayResults(meals, skipScroll) {
         const wetFormatted = formatWeight(meal.wetGrams, meal.wetPackWeight);
         
         mealCard.innerHTML = `
-            <div class="meal-header">
-                <span class="meal-time">${meal.time}</span>
+            <div class="meal-time-block">
                 <span class="meal-number">第 ${meal.number} 餐</span>
+                <div class="meal-time-circle">
+                    <span class="meal-time">${meal.time}</span>
+                </div>
             </div>
-            <div class="meal-details">
+            <div class="meal-portions">
                 <div class="detail-item">
                     <span class="detail-label">🍖 濕糧</span>
                     <span class="detail-value">${wetFormatted}</span>
@@ -655,6 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (raw) {
             const parsed = JSON.parse(raw);
             applySettings(parsed);
+            hideForm(); // 已有設定時預設隱藏輸入表單，只顯示身分證與結果
         } else {
             updateRatioModeUI();
             renderMealRatios();
@@ -677,6 +809,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) el.addEventListener('input', updateMealResultsRealtime);
     });
     if (firstMealTimeInput) firstMealTimeInput.addEventListener('change', updateMealResultsRealtime);
+
+    if (petPhotoInput) {
+        petPhotoInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                petPhotoDataUrl = ev.target.result;
+                if (petPhotoPreview) {
+                    petPhotoPreview.src = petPhotoDataUrl;
+                    petPhotoPreview.style.display = 'block';
+                }
+                if (petPhotoPreviewFallback) petPhotoPreviewFallback.style.display = 'none';
+                updatePetCardFromState();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (editPetButton) {
+        editPetButton.addEventListener('click', () => {
+            const form = document.getElementById('calculatorForm');
+            showForm();
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (petNameInput) petNameInput.focus();
+        });
+    }
+
+    updatePetCardFromState();
 });
 
 // 儲存／重設按鈕綁定

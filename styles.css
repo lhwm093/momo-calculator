@@ -25,6 +25,7 @@ body {
         0 2px 8px rgba(61, 54, 50, 0.06),
         0 12px 40px rgba(61, 54, 50, 0.08),
         0 24px 64px rgba(61, 54, 50, 0.04);
+    position: relative;
 }
 
 /* 頂部：僅置中貓 Emoji */
@@ -37,6 +38,29 @@ body {
     font-size: 48px;
     line-height: 1;
     display: inline-block;
+}
+
+/* 說明按鈕 📖 */
+.info-button {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: none;
+    background: #f3f4f6;
+    box-shadow: 0 3px 10px rgba(61, 54, 50, 0.15);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.info-button:hover {
+    background: #e5e7eb;
 }
 
 /* 寵物身分證卡片 */
@@ -132,10 +156,70 @@ body {
     background: #f7fafc;
 }
 
+.pet-meta-name-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.pet-meta-sex {
+    font-size: 13px;
+    font-weight: 600;
+    color: #718096;
+}
+
+.pet-meta-age-band {
+    font-size: 12px;
+    color: #a0aec0;
+    font-weight: 500;
+}
+
+.pet-weight-icon {
+    font-style: normal;
+}
+
 .pet-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+}
+
+.pet-stat--status {
+    grid-column: span 2;
+}
+
+.pet-status-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.pet-status-btn {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.pet-status-btn:hover {
+    background: #f7fafc;
+}
+
+.pet-status-btn.active {
+    background: linear-gradient(145deg, #68d391 0%, #48bb78 100%);
+    color: #fff;
+    border-color: transparent;
+}
+
+.pet-status-btn[data-status="sick"].active {
+    background: linear-gradient(145deg, #fc8181 0%, #f56565 100%);
 }
 
 .pet-stat {
@@ -175,6 +259,60 @@ body {
 
 #petCaloriesDisplay.pet-stat-value {
     color: #dd6b20;
+}
+
+/* 選項按鈕（性別、絕育、狀態）*/
+.option-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.option-btn {
+    flex: 1;
+    padding: 12px 14px;
+    min-height: 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #F3F4F6;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.option-btn:hover {
+    background: #e8e4dc;
+}
+
+.option-btn.active {
+    background: linear-gradient(145deg, #f6ad55 0%, #ed8936 50%, #dd6b20 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(237, 137, 54, 0.4);
+}
+
+/* 活躍程度滑條 */
+.activity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.activity-row input[type="range"] {
+    flex: 1;
+}
+
+.activity-display {
+    font-weight: 700;
+    color: #3d3632;
+    min-width: 4em;
+}
+
+.result-box--age .result-number {
+    font-size: 18px;
 }
 
 .input-section {
@@ -631,6 +769,97 @@ select:focus {
     opacity: 0.95;
 }
 
+/* 說明彈窗 */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 2000;
+}
+
+.modal.is-open {
+    display: block;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+}
+
+.modal-dialog {
+    position: relative;
+    max-width: 520px;
+    margin: 40px auto;
+    background: #fffefb;
+    border-radius: 20px;
+    padding: 20px 20px 18px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: none;
+    background: #f3f4f6;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.modal-body {
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
+    margin-top: 8px;
+    padding-right: 4px;
+}
+
+.modal-section + .modal-section {
+    margin-top: 16px;
+}
+
+.modal-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #4a5568;
+}
+
+.modal-section p {
+    font-size: 13px;
+    color: #4a5568;
+    line-height: 1.5;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.info-table th,
+.info-table td {
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.info-table thead th {
+    background: #f7fafc;
+    font-weight: 600;
+}
+
 .results-section {
     margin-top: 28px;
     padding-top: 24px;
@@ -901,7 +1130,7 @@ select:focus {
     }
     
     .container {
-        padding: 16px;
+        padding: 18px 16px 16px;
         border-radius: 20px;
     }
 
@@ -911,6 +1140,14 @@ select:focus {
 
     .header-emoji {
         font-size: 40px;
+    }
+
+    .info-button {
+        top: 14px;
+        left: 12px;
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
     }
 
     .pet-card {

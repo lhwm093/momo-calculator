@@ -11,6 +11,7 @@
 </head>
 <body>
     <div class="container">
+        <button type="button" id="infoButton" class="info-button" aria-label="查看公式與說明">📖</button>
         <header class="app-header">
             <span class="header-emoji">🐱</span>
         </header>
@@ -23,7 +24,11 @@
             </div>
             <div class="pet-meta">
                 <div class="pet-meta-top">
-                    <div id="petNameDisplay" class="pet-meta-name">小貓</div>
+                    <div class="pet-meta-name-wrap">
+                        <span id="petNameDisplay" class="pet-meta-name">小貓</span>
+                        <span id="petSexDisplay" class="pet-meta-sex"></span>
+                        <span id="petAgeBandDisplay" class="pet-meta-age-band"></span>
+                    </div>
                     <button type="button" id="editPetButton" class="pet-edit-btn" aria-label="編輯">✏️</button>
                 </div>
 
@@ -34,11 +39,22 @@
                     </div>
                     <div class="pet-stat">
                         <div class="pet-stat-label">體重</div>
-                        <div id="petWeightDisplay" class="pet-stat-value">— kg</div>
+                        <div id="petWeightDisplay" class="pet-stat-value">— kg <span id="petWeightStatusIcon" class="pet-weight-icon"></span></div>
                     </div>
                     <div class="pet-stat">
                         <div class="pet-stat-label">每日熱量</div>
                         <div id="petCaloriesDisplay" class="pet-stat-value">— kcal</div>
+                    </div>
+                    <div class="pet-stat">
+                        <div class="pet-stat-label">活躍程度</div>
+                        <div id="petActivityDisplay" class="pet-stat-value">—</div>
+                    </div>
+                    <div class="pet-stat pet-stat--status">
+                        <div class="pet-stat-label">狀態</div>
+                        <div class="pet-status-buttons" role="group">
+                            <button type="button" class="pet-status-btn active" data-status="healthy">健康</button>
+                            <button type="button" class="pet-status-btn" data-status="sick">生病</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,6 +74,42 @@
                         <input type="date" id="petBirth">
                     </div>
                 </div>
+                <div id="petAgeResult" class="result-box result-box--age" style="display: none;">
+                    <h3>年齡</h3>
+                    <span id="petAgeValue" class="result-number">—</span>
+                </div>
+                <div class="input-section pet-info-section">
+                    <label>性別</label>
+                    <div class="option-buttons" role="group">
+                        <button type="button" class="option-btn active" data-field="petSex" data-value="male">♂ 公</button>
+                        <button type="button" class="option-btn" data-field="petSex" data-value="female">♀ 母</button>
+                    </div>
+                    <input type="hidden" id="petSex" value="male">
+                </div>
+                <div class="input-section pet-info-section">
+                    <label>絕育</label>
+                    <div class="option-buttons" role="group">
+                        <button type="button" class="option-btn" data-field="neutered" data-value="no">❌ 未絕育</button>
+                        <button type="button" class="option-btn" data-field="neutered" data-value="yes">✂️ 已絕育</button>
+                    </div>
+                    <input type="hidden" id="neutered" value="no">
+                </div>
+                <div class="input-section pet-info-section">
+                    <label for="activitySlider">活躍程度</label>
+                    <div class="activity-row">
+                        <input type="range" id="activitySlider" min="0" max="2" value="1" step="1">
+                        <span id="activityDisplay" class="activity-display">一般</span>
+                    </div>
+                    <input type="hidden" id="activity" value="normal">
+                </div>
+                <div class="input-section pet-info-section">
+                    <label>狀態</label>
+                    <div class="option-buttons" role="group">
+                        <button type="button" class="option-btn" data-field="healthStatus" data-value="healthy">健康</button>
+                        <button type="button" class="option-btn" data-field="healthStatus" data-value="sick">生病</button>
+                    </div>
+                    <input type="hidden" id="healthStatus" value="healthy">
+                </div>
                 <div class="pet-photo-upload">
                     <label for="petPhoto">寵物照片（選填）</label>
                     <div class="pet-photo-row">
@@ -70,9 +122,9 @@
                 </div>
             </section>
 
-            <!-- 幼貓重量 -->
+            <!-- 貓的重量 -->
             <section class="input-section weight-section">
-                <label for="catWeight">幼貓重量（公斤）</label>
+                <label for="catWeight">貓的重量（公斤）</label>
                 <input type="number" id="catWeight" step="0.01" min="0.1" max="8" required placeholder="例如：1.60">
                 <div class="weight-slider-row">
                     <input type="range" id="catWeightSlider" min="0.1" max="8" step="0.01">
@@ -198,6 +250,76 @@
         <!-- 結果顯示區域 -->
         <div id="resultsSection" class="results-section" style="display: none;">
             <div id="mealResults"></div>
+        </div>
+
+        <!-- 說明彈窗 -->
+        <div id="infoModal" class="modal" aria-hidden="true">
+            <div class="modal-backdrop" id="infoModalBackdrop"></div>
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+                <button type="button" class="modal-close" id="infoModalClose" aria-label="關閉">✕</button>
+                <h2 id="infoModalTitle" class="modal-title">計算公式與說明</h2>
+                <div class="modal-body">
+                    <section class="modal-section">
+                        <h3>每日熱量公式</h3>
+                        <p>每日所需熱量 = <strong>體重<sup>0.75</sup> × 70 × 乘數</strong></p>
+                        <p>乘數會依照 <strong>年齡區間、是否絕育、活躍程度、體重狀態與是否生病</strong> 自動調整。</p>
+                    </section>
+
+                    <section class="modal-section">
+                        <h3>年齡區間</h3>
+                        <table class="info-table">
+                            <thead>
+                                <tr><th>區間</th><th>定義</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>幼貓</td><td>出生 &lt; 4 個月</td></tr>
+                                <tr><td>幼貓（大）</td><td>4 個月 ~ 未滿 1 歲</td></tr>
+                                <tr><td>成貓</td><td>1 歲 ~ 7 歲</td></tr>
+                                <tr><td>中年成貓</td><td>7 歲 ~ 11 歲</td></tr>
+                                <tr><td>老年貓</td><td>11 歲以上</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section class="modal-section">
+                        <h3>體重狀態判定</h3>
+                        <table class="info-table">
+                            <thead>
+                                <tr><th>年齡</th><th>過瘦</th><th>正常</th><th>肥胖</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>新生 ~ 1 個月</td><td>&lt; 0.09 kg</td><td>≥ 0.09 kg</td><td>—</td></tr>
+                                <tr><td>2 個月</td><td>&lt; 0.8 kg</td><td>≥ 0.8 kg</td><td>—</td></tr>
+                                <tr><td>3 ~ 5 個月</td><td>&lt; 1 kg</td><td>≥ 1 kg</td><td>—</td></tr>
+                                <tr><td>6 ~ 11 個月</td><td>&lt; 2 kg</td><td>≥ 2 kg</td><td>—</td></tr>
+                                <tr><td>成貓 / 中年成貓</td><td>&lt; 3.6 kg</td><td>3.6 ~ 4.5 kg</td><td>&gt; 4.5 kg</td></tr>
+                                <tr><td>老年貓</td><td>&lt; 3 kg</td><td>3 ~ 7 kg</td><td>&gt; 7 kg</td></tr>
+                            </tbody>
+                        </table>
+                        <p>身分證上會以 <strong>👍🏻 正常 / 🐷 肥胖 / 💀 過瘦</strong> 顯示體重狀態。</p>
+                    </section>
+
+                    <section class="modal-section">
+                        <h3>活躍程度與乘數</h3>
+                        <table class="info-table">
+                            <thead>
+                                <tr><th>年齡 / 狀態</th><th>死懶鬼</th><th>一般</th><th>ADHD</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>幼貓 &lt; 4 個月</td><td colspan="3">× 2.5</td></tr>
+                                <tr><td>4 個月 ~ 未滿 1 歲</td><td>× 2.0</td><td>× 2.0</td><td>× 2.5</td></tr>
+                                <tr><td>成貓 1 ~ 7 歲（已絕育）</td><td>× 1.2</td><td>× 1.3</td><td>× 1.4</td></tr>
+                                <tr><td>成貓 1 ~ 7 歲（未絕育）</td><td>× 1.4</td><td>× 1.5</td><td>× 1.6</td></tr>
+                                <tr><td>中年成貓 7 ~ 11 歲</td><td>× 1.1</td><td>× 1.25</td><td>× 1.4</td></tr>
+                                <tr><td>老年貓 ≥ 11 歲</td><td>× 1.1</td><td>× 1.3</td><td>× 1.6</td></tr>
+                                <tr><td>肥胖貓</td><td>× 0.8</td><td>× 0.9</td><td>× 1.0</td></tr>
+                                <tr><td>過瘦成貓 / 中年成貓</td><td>× 1.2</td><td>× 1.5</td><td>× 1.8</td></tr>
+                                <tr><td>生病成貓</td><td colspan="3">× 1.0（不看活躍程度）</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+            </div>
         </div>
 
     </div>

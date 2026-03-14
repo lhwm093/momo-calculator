@@ -2,7 +2,7 @@
 let dailyCalories = 0;
 
 // localStorage key
-const STORAGE_KEY = 'momo-kitten-settings-v1';
+const STORAGE_KEY = 'momo-kitten-settings-v2';
 
 // 比例選項（每餐乾/濕糧可選 0%、25%、50%、75%、100%）
 const RATIO_OPTIONS = [0, 25, 50, 75, 100];
@@ -50,8 +50,23 @@ const petWeightDisplay = document.getElementById('petWeightDisplay');
 const petCaloriesDisplay = document.getElementById('petCaloriesDisplay');
 const editPetButton = document.getElementById('editPetButton');
 const calculatorForm = document.getElementById('calculatorForm');
+const petAgeResult = document.getElementById('petAgeResult');
+const petAgeValue = document.getElementById('petAgeValue');
+const activitySlider = document.getElementById('activitySlider');
+const activityDisplay = document.getElementById('activityDisplay');
+const petSexDisplay = document.getElementById('petSexDisplay');
+const petAgeBandDisplay = document.getElementById('petAgeBandDisplay');
+const petWeightStatusIcon = document.getElementById('petWeightStatusIcon');
+const petActivityDisplay = document.getElementById('petActivityDisplay');
+const infoButton = document.getElementById('infoButton');
+const infoModal = document.getElementById('infoModal');
+const infoModalClose = document.getElementById('infoModalClose');
+const infoModalBackdrop = document.getElementById('infoModalBackdrop');
 
 let petPhotoDataUrl = '';
+
+const ACTIVITY_LABELS = { lazy: '死懶鬼', normal: '一般', adhd: 'ADHD' };
+const AGE_BAND_LABELS = { kitten: '幼貓', junior: '幼貓', adult: '成貓', middle: '中年成貓', senior: '老年貓' };
 
 function showForm() {
     if (calculatorForm) calculatorForm.style.display = 'block';
@@ -61,17 +76,156 @@ function hideForm() {
     if (calculatorForm) calculatorForm.style.display = 'none';
 }
 
-// 計算每日熱量
-function calculateDailyCalories(weight) {
-    // 公式：√(√(w³)) × 70 × 2.5
-    const wCubed = weight * weight * weight;
-    const firstSqrt = Math.sqrt(wCubed);
-    const secondSqrt = Math.sqrt(firstSqrt);
-    const calories = secondSqrt * 70 * 2.5;
-    return Math.round(calories * 100) / 100; // 保留兩位小數
+// --- 年齡區間與乘數（依出生日、絕育、活躍、體重狀態、生病）---
+// 回傳 { years, months, totalMonths }，無生日則 null
+function getAgeInMonths(birthStr) {
+    if (!birthStr) return null;
+    const birth = new Date(birthStr);
+    if (isNaN(birth.getTime())) return null;
+    const now = new Date();
+    if (birth > now) return null;
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    let days = now.getDate() - birth.getDate();
+    if (days < 0) {
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+        months -= 1;
+    }
+    if (months < 0) {
+        months += 12;
+        years -= 1;
+    }
+    return { years, months, totalMonths: years * 12 + months };
 }
 
-// 依重量即時更新每日熱量（拖拉或輸入時自動計算）
+// 年齡區間：kitten(<4月) | junior(4月~未滿1歲) | adult(1~7歲) | middle(7~11歲) | senior(≥11歲)
+function getAgeBand(birthStr) {
+    const age = getAgeInMonths(birthStr);
+    if (!age) return null;
+    const m = age.totalMonths;
+    if (m < 4) return 'kitten';
+    if (m < 12) return 'junior';
+    if (m < 84) return 'adult';   // 1–7 歲
+    if (m < 132) return 'middle'; // 7–11 歲
+    return 'senior';
+}
+
+// 體重狀態：under | normal | obese（幼貓/4月~1歲不判定肥胖）
+// 門檻：新生~1月<0.09kg過瘦 | 2月<0.8 | 3~5月<1 | 6~11月<2 | 成貓/中年 母<3.6/公<4.9過瘦 >4.5肥胖 | 老貓<3過瘦 >7肥胖
+function getWeightStatus(ageBand, weightKg, sex, birthStr) {
+    if (!weightKg || weightKg <= 0) return 'normal';
+    const age = birthStr ? getAgeInMonths(birthStr) : null;
+    if (!ageBand) return 'normal';
+
+    if (ageBand === 'kitten' || ageBand === 'junior') {
+        const m = age ? age.totalMonths : 0;
+        const w = weightKg;
+        if (m <= 1 && w < 0.09) return 'under';   // 新生~1個月
+        if (m >= 2 && m < 3 && w < 0.8) return 'under';  // 2個月
+        if (m >= 3 && m < 6 && w < 1) return 'under';    // 3~5個月
+        if (m >= 6 && m < 12 && w < 2) return 'under';   // 6~11個月（junior 上限 11）
+        return 'normal';
+    }
+
+    if (ageBand === 'adult' || ageBand === 'middle') {
+        // 成貓／中年：理想 3.6–4.5 kg，>4.5 視為肥胖，<3.6 視為過瘦（不再放大公貓過瘦門檻）
+        if (weightKg > 4.5) return 'obese';
+        if (weightKg < 3.6) return 'under';
+        return 'normal';
+    }
+
+    if (ageBand === 'senior') {
+        if (weightKg < 3) return 'under';
+        if (weightKg > 7) return 'obese';
+        return 'normal';
+    }
+
+    return 'normal';
+}
+
+// 乘數優先：生病(成貓) > 肥胖 > 過瘦成貓 > 年齡+絕育+活躍
+// 無出生日期時視為成貓，至少依絕育與活躍程度計算
+function getMultiplier(ageBand, neutered, activity, weightStatus, isSick) {
+    const lazy = activity === 'lazy';
+    const normal = activity === 'normal';
+    const adhd = activity === 'adhd';
+    const effectiveBand = ageBand || 'adult';
+
+    if (isSick && effectiveBand === 'adult') return 1;
+
+    if (weightStatus === 'obese') {
+        if (lazy) return 0.8;
+        if (normal) return 0.9;
+        return 1;
+    }
+    if (weightStatus === 'under' && (effectiveBand === 'adult' || effectiveBand === 'middle')) {
+        if (lazy) return 1.2;
+        if (normal) return 1.5;
+        return 1.8;
+    }
+
+    switch (effectiveBand) {
+        case 'kitten':
+            return 2.5;
+        case 'junior':
+            if (adhd) return 2.5;
+            return 2;
+        case 'adult':
+            const neuteredYes = neutered === 'yes';
+            if (neuteredYes) {
+                if (lazy) return 1.2;
+                if (normal) return 1.3;
+                return 1.4;
+            }
+            if (lazy) return 1.4;
+            if (normal) return 1.5;
+            return 1.6;
+        case 'middle':
+            if (lazy) return 1.1;
+            if (normal) return 1.25;
+            return 1.4;
+        case 'senior':
+            if (lazy) return 1.1;
+            if (normal) return 1.3;
+            return 1.6;
+        default:
+            return 2.5;
+    }
+}
+
+// 計算每日熱量：體重^0.75 × 70 × 乘數
+function calculateDailyCalories(weight) {
+    const birthStr = document.getElementById('petBirth')?.value || '';
+    const sex = document.getElementById('petSex')?.value || 'male';
+    const neutered = document.getElementById('neutered')?.value || 'no';
+    const activity = document.getElementById('activity')?.value || 'normal';
+    const healthStatus = document.getElementById('healthStatus')?.value || 'healthy';
+
+    const ageBand = getAgeBand(birthStr);
+    const weightStatus = getWeightStatus(ageBand, weight, sex, birthStr);
+    const isSick = healthStatus === 'sick';
+    const mult = getMultiplier(ageBand, neutered, activity, weightStatus, isSick);
+
+    const base = Math.pow(weight, 0.75) * 70;
+    const calories = base * mult;
+    return Math.round(calories * 100) / 100;
+}
+
+// 更新年齡區塊顯示（出生日期變更時）
+function updatePetAgeBlock() {
+    const birth = petBirthInput ? petBirthInput.value : '';
+    if (!petAgeResult || !petAgeValue) return;
+    if (!birth) {
+        petAgeResult.style.display = 'none';
+        return;
+    }
+    const text = (formatPetAge(birth) || '').replace(/^年齡：/, '').trim();
+    petAgeValue.textContent = text || '—';
+    petAgeResult.style.display = 'block';
+}
+
+// 依重量與所有狀態即時更新每日熱量
 function updateDailyCaloriesFromWeight() {
     const weight = parseFloat(catWeightInput.value);
     if (!weight || weight <= 0) {
@@ -82,6 +236,47 @@ function updateDailyCaloriesFromWeight() {
     dailyCalories = calculateDailyCalories(weight);
     dailyCaloriesSpan.textContent = dailyCalories;
     dailyCaloriesResult.style.display = 'block';
+}
+
+// 選項按鈕（性別、絕育、狀態）：點擊設 hidden 並更新 active，再重算熱量（僅綁定一次）
+let optionButtonsBound = false;
+function initOptionButtons() {
+    if (optionButtonsBound) return;
+    optionButtonsBound = true;
+    document.querySelectorAll('.option-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const field = btn.dataset.field;
+            const value = btn.dataset.value;
+            const hidden = document.getElementById(field);
+            if (hidden) hidden.value = value;
+            btn.closest('.option-buttons')?.querySelectorAll('.option-btn').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            updatePetAgeBlock();
+            updateDailyCaloriesFromWeight();
+            updateMealResultsRealtime();
+        });
+    });
+}
+
+// 活躍程度滑條：0=死懶鬼 1=一般 2=ADHD（僅綁定一次，避免覆寫還原值）
+let activitySliderBound = false;
+function initActivitySlider() {
+    if (!activitySlider || !activityDisplay) return;
+    const sync = () => {
+        const parsed = parseInt(activitySlider.value, 10);
+        const v = Number.isNaN(parsed) ? 1 : parsed;
+        const act = v === 0 ? 'lazy' : v === 2 ? 'adhd' : 'normal';
+        const hidden = document.getElementById('activity');
+        if (hidden) hidden.value = act;
+        activityDisplay.textContent = ACTIVITY_LABELS[act];
+        updateDailyCaloriesFromWeight();
+        updateMealResultsRealtime();
+    };
+    if (!activitySliderBound) {
+        activitySliderBound = true;
+        activitySlider.addEventListener('input', sync);
+    }
+    sync();
 }
 
 // 切換乾糧每包重量顯示
@@ -392,7 +587,11 @@ function collectSettings() {
         ratioMode: getRatioMode(),
         petName: petNameInput ? petNameInput.value : '',
         petBirth: petBirthInput ? petBirthInput.value : '',
-        petPhoto: petPhotoDataUrl || ''
+        petPhoto: petPhotoDataUrl || '',
+        petSex: document.getElementById('petSex')?.value || '',
+        neutered: document.getElementById('neutered')?.value || 'no',
+        activity: document.getElementById('activity')?.value || 'normal',
+        healthStatus: document.getElementById('healthStatus')?.value || 'healthy'
     };
 
     if (settings.ratioMode === 'perMeal' && mealsPerDay >= 2) {
@@ -434,6 +633,34 @@ function applySettings(settings) {
     // 寵物基本資料
     if (petNameInput) petNameInput.value = settings.petName || '';
     if (petBirthInput) petBirthInput.value = settings.petBirth || '';
+    const petSexEl = document.getElementById('petSex');
+    if (petSexEl) petSexEl.value = settings.petSex || '';
+    const neuteredEl = document.getElementById('neutered');
+    if (neuteredEl) neuteredEl.value = settings.neutered || 'no';
+    const activityEl = document.getElementById('activity');
+    if (activityEl) activityEl.value = settings.activity || 'normal';
+    const healthStatusEl = document.getElementById('healthStatus');
+    if (healthStatusEl) healthStatusEl.value = settings.healthStatus || 'healthy';
+    if (activitySlider) {
+        const v = settings.activity === 'lazy' ? 0 : settings.activity === 'adhd' ? 2 : 1;
+        activitySlider.value = String(v);
+        const act = settings.activity || 'normal';
+        const activityHidden = document.getElementById('activity');
+        if (activityHidden) activityHidden.value = act;
+        if (activityDisplay) activityDisplay.textContent = ACTIVITY_LABELS[act];
+    }
+    initOptionButtons();
+    initActivitySlider();
+    if (settings.petBirth) updatePetAgeBlock();
+    document.querySelectorAll('.option-btn[data-field="petSex"]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.value === (settings.petSex || ''));
+    });
+    document.querySelectorAll('.option-btn[data-field="neutered"]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.value === (settings.neutered || 'no'));
+    });
+    document.querySelectorAll('.option-btn[data-field="healthStatus"]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.value === (settings.healthStatus || 'healthy'));
+    });
     if (settings.petPhoto) {
         petPhotoDataUrl = settings.petPhoto;
         if (petPhotoPreview) {
@@ -496,18 +723,18 @@ function applySettings(settings) {
         if (fixedWetRatioDisplay) fixedWetRatioDisplay.textContent = fixedWetRatioSlider.value;
     }
 
-    // 還原每日熱量顯示（若有）
-    if (typeof settings.dailyCalories === 'number' && settings.dailyCalories > 0) {
-        dailyCalories = settings.dailyCalories;
-        dailyCaloriesSpan.textContent = dailyCalories;
-        dailyCaloriesResult.style.display = 'block';
-    } else if (settings.catWeight) {
+    // 還原每日熱量顯示（依體重與狀態重算）
+    if (settings.catWeight) {
         const w = parseFloat(settings.catWeight);
         if (!isNaN(w) && w > 0) {
             dailyCalories = calculateDailyCalories(w);
             dailyCaloriesSpan.textContent = dailyCalories;
             dailyCaloriesResult.style.display = 'block';
         }
+    } else if (typeof settings.dailyCalories === 'number' && settings.dailyCalories > 0) {
+        dailyCalories = settings.dailyCalories;
+        dailyCaloriesSpan.textContent = dailyCalories;
+        dailyCaloriesResult.style.display = 'block';
     }
 
     updateMealResultsRealtime();
@@ -580,11 +807,36 @@ function updatePetCardFromState() {
     const birth = petBirthInput ? petBirthInput.value : '';
     const ageText = formatPetAge(birth);
     const weight = parseFloat(catWeightInput.value) || 0;
+    const sex = document.getElementById('petSex')?.value || '';
+    const activity = document.getElementById('activity')?.value || 'normal';
+    const healthStatus = document.getElementById('healthStatus')?.value || 'healthy';
+
+    const ageBand = getAgeBand(birth);
+    const weightStatus = getWeightStatus(ageBand, weight, sex, birth);
 
     if (petNameDisplay) petNameDisplay.textContent = name;
+    if (petSexDisplay) {
+        petSexDisplay.textContent = sex === 'female' ? '女' : sex === 'male' ? '男' : '';
+        petSexDisplay.style.display = sex ? 'inline' : 'none';
+    }
+    if (petAgeBandDisplay) {
+        const bandLabel = ageBand ? AGE_BAND_LABELS[ageBand] : '';
+        petAgeBandDisplay.textContent = bandLabel ? `（${bandLabel}）` : '';
+        petAgeBandDisplay.style.display = bandLabel ? 'inline' : 'none';
+    }
     if (petAgeDisplay) petAgeDisplay.textContent = (ageText || '—').replace(/^年齡：/, '').trim() || '—';
-    if (petWeightDisplay) petWeightDisplay.textContent = weight > 0 ? `${weight.toFixed(2)} kg` : '— kg';
+    if (petWeightDisplay) {
+        const wtxt = weight > 0 ? `${weight.toFixed(2)} kg` : '— kg';
+        const icon = weight > 0 ? (weightStatus === 'obese' ? ' 🐷' : weightStatus === 'under' ? ' 💀' : ' 👍🏻') : '';
+        petWeightDisplay.innerHTML = wtxt + (icon ? `<span id="petWeightStatusIcon" class="pet-weight-icon">${icon}</span>` : '');
+    }
     if (petCaloriesDisplay) petCaloriesDisplay.textContent = dailyCalories > 0 ? `${Math.round(dailyCalories)} kcal` : '— kcal';
+    if (petActivityDisplay) petActivityDisplay.textContent = ACTIVITY_LABELS[activity] || '—';
+
+    const statusBtns = petCard.querySelectorAll('.pet-status-btn');
+    statusBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.status === healthStatus);
+    });
 
     if (petPhotoDataUrl && petPhotoDisplay) {
         petPhotoDisplay.src = petPhotoDataUrl;
@@ -795,6 +1047,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRatioModeUI();
         renderMealRatios();
     }
+    initOptionButtons();
+    initActivitySlider();
     initWeightControls();
     initMealsButtons();
     initWaterButtons();
@@ -836,6 +1090,43 @@ document.addEventListener('DOMContentLoaded', () => {
             if (petNameInput) petNameInput.focus();
         });
     }
+
+    // 說明彈窗開關
+    if (infoButton && infoModal) {
+        const openModal = () => {
+            infoModal.classList.add('is-open');
+            infoModal.setAttribute('aria-hidden', 'false');
+        };
+        const closeModal = () => {
+            infoModal.classList.remove('is-open');
+            infoModal.setAttribute('aria-hidden', 'true');
+        };
+        infoButton.addEventListener('click', openModal);
+        infoModalClose?.addEventListener('click', closeModal);
+        infoModalBackdrop?.addEventListener('click', closeModal);
+    }
+
+    petCard?.querySelectorAll('.pet-status-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const statusHidden = document.getElementById('healthStatus');
+            if (statusHidden) statusHidden.value = btn.dataset.status;
+            petCard.querySelectorAll('.pet-status-btn').forEach((b) => b.classList.toggle('active', b === btn));
+            updateDailyCaloriesFromWeight();
+            updateMealResultsRealtime();
+            updatePetCardFromState();
+        });
+    });
+
+    petBirthInput?.addEventListener('input', () => {
+        updatePetAgeBlock();
+        updateDailyCaloriesFromWeight();
+        updateMealResultsRealtime();
+    });
+    petBirthInput?.addEventListener('change', () => {
+        updatePetAgeBlock();
+        updateDailyCaloriesFromWeight();
+        updateMealResultsRealtime();
+    });
 
     updatePetCardFromState();
 });

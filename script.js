@@ -532,7 +532,7 @@ function initWeightControls() {
     catWeightInput.addEventListener('input', syncWeightFromInput);
 }
 
-// 每天幾頓飯：三按鈕 1 / 2 / 3 頓
+// 每天幾頓飯：按鈕 2 / 3 / 4 頓
 function initMealsButtons() {
     const container = document.querySelector('.meals-buttons');
     if (!container || !mealsPerDaySelect) return;
@@ -563,7 +563,7 @@ function initWaterButtons() {
     });
 }
 
-// 每頓飯相隔：滑桿 4–6 小時
+// 每頓飯相隔：滑桿 4–12 小時
 function initMealIntervalSlider() {
     if (!mealIntervalSlider || !mealIntervalDisplay) return;
     const hidden = document.getElementById('mealInterval');
@@ -627,10 +627,10 @@ function applySettings(settings) {
     if (waterPerKgInput) waterPerKgInput.value = settings.waterPerKg || '50';
     document.getElementById('firstMealTime').value = settings.firstMealTime || '';
     const mealIntervalHidden = document.getElementById('mealInterval');
-    if (mealIntervalHidden) mealIntervalHidden.value = settings.mealInterval || '5';
+    if (mealIntervalHidden) mealIntervalHidden.value = settings.mealInterval || '6';
     if (mealIntervalSlider) {
-        mealIntervalSlider.value = settings.mealInterval || '5';
-        if (mealIntervalDisplay) mealIntervalDisplay.textContent = (settings.mealInterval || '5') + ' 小時';
+        mealIntervalSlider.value = settings.mealInterval || '6';
+        if (mealIntervalDisplay) mealIntervalDisplay.textContent = (settings.mealInterval || '6') + ' 小時';
     }
     // 喝水量按鈕選中狀態
     document.querySelectorAll('.water-btn').forEach((btn) => {
@@ -681,7 +681,7 @@ function applySettings(settings) {
     }
 
     if (settings.mealsPerDay) {
-        const n = Math.min(3, Math.max(1, parseInt(settings.mealsPerDay) || 2));
+        const n = Math.min(4, Math.max(2, parseInt(settings.mealsPerDay) || 2));
         mealsPerDaySelect.value = String(n);
         document.querySelectorAll('.meals-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.value === String(n));

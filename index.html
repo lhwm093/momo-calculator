@@ -161,13 +161,13 @@
                 </div>
             </section>
 
-            <!-- 每天幾頓飯（按鈕 1 / 2 / 3 頓） -->
+            <!-- 每天幾頓飯（按鈕 2 / 3 / 4 頓） -->
             <section class="input-section">
                 <label>每天吃幾頓飯</label>
                 <div class="meals-buttons" role="group">
-                    <button type="button" class="meals-btn" data-value="1">1 頓</button>
                     <button type="button" class="meals-btn active" data-value="2">2 頓</button>
                     <button type="button" class="meals-btn" data-value="3">3 頓</button>
+                    <button type="button" class="meals-btn" data-value="4">4 頓</button>
                 </div>
                 <input type="hidden" id="mealsPerDay" value="2" required>
             </section>
@@ -228,14 +228,14 @@
                 <input type="time" id="firstMealTime" required>
             </section>
 
-            <!-- 每頓飯相隔時間（拖拉式） -->
+            <!-- 每頓飯相隔時間（拖拉式，4–12 小時） -->
             <section class="input-section">
                 <label for="mealIntervalSlider">每頓飯相隔多久</label>
                 <div class="interval-slider-row">
-                    <input type="range" id="mealIntervalSlider" min="4" max="6" value="5" step="1">
-                    <span class="interval-slider-value" id="mealIntervalDisplay">5 小時</span>
+                    <input type="range" id="mealIntervalSlider" min="4" max="12" value="6" step="1">
+                    <span class="interval-slider-value" id="mealIntervalDisplay">6 小時</span>
                 </div>
-                <input type="hidden" id="mealInterval" value="5" required>
+                <input type="hidden" id="mealInterval" value="6" required>
             </section>
 
             <!-- 設定儲存動作 -->

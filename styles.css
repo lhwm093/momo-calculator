@@ -147,19 +147,34 @@ body {
 
 .pet-stat-label {
     font-size: 11px;
-    color: #718096;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    color: #a0aec0;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .pet-stat-value {
     margin-top: 4px;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 800;
     color: #2d3748;
+    letter-spacing: -0.02em;
+    font-feature-settings: "tnum" 1, "lnum" 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+#petAgeDisplay.pet-stat-value {
+    color: #4a5568;
+}
+
+#petWeightDisplay.pet-stat-value {
+    color: #2b6cb0;
+}
+
+#petCaloriesDisplay.pet-stat-value {
+    color: #dd6b20;
 }
 
 .input-section {
@@ -940,7 +955,7 @@ select:focus {
     }
 
     .pet-stat-value {
-        font-size: 14px;
+        font-size: 15px;
         white-space: normal;
     }
 

@@ -67,6 +67,7 @@ const photoAdjustBackdrop = document.getElementById('photoAdjustBackdrop');
 const photoAdjustClose = document.getElementById('photoAdjustClose');
 const photoAdjustPreview = document.getElementById('photoAdjustPreview');
 const photoOffsetSlider = document.getElementById('photoOffsetSlider');
+const photoAdjustSave = document.getElementById('photoAdjustSave');
 
 let petPhotoDataUrl = '';
 let petPhotoOffset = 50;
@@ -1174,6 +1175,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const v = parseInt(photoOffsetSlider.value, 10);
             if (!Number.isNaN(v)) {
                 applyPhotoOffset(v);
+            }
+        });
+    }
+    if (photoAdjustSave) {
+        photoAdjustSave.addEventListener('click', () => {
+            // 單獨儲存目前構圖（不改動其他欄位）
+            try {
+                const current = collectSettings();
+                current.petPhoto = petPhotoDataUrl || current.petPhoto || '';
+                current.petPhotoOffset = petPhotoOffset;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+                showSaveMessage('已儲存目前的照片構圖。');
+                closePhotoAdjust();
+            } catch (e) {
+                showSaveMessage('儲存照片構圖失敗，請稍後再試。', true);
             }
         });
     }

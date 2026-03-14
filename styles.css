@@ -917,6 +917,10 @@ select:focus {
     color: #718096;
 }
 
+.photo-adjust-actions {
+    margin-top: 12px;
+}
+
 .results-section {
     margin-top: 28px;
     padding-top: 24px;

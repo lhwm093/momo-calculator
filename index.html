@@ -22,20 +22,24 @@
                 <span id="petAvatarFallback" class="pet-avatar-fallback">🐱</span>
             </div>
             <div class="pet-meta">
-                <div class="pet-meta-header">
-                    <div>
-                        <div id="petNameDisplay" class="pet-meta-name">小貓</div>
-                        <div id="petAgeDisplay" class="pet-meta-sub">年齡：—</div>
+                <div class="pet-meta-top">
+                    <div id="petNameDisplay" class="pet-meta-name">小貓</div>
+                    <button type="button" id="editPetButton" class="pet-edit-btn" aria-label="編輯">✏️</button>
+                </div>
+
+                <div class="pet-stats" role="group" aria-label="寵物資訊">
+                    <div class="pet-stat">
+                        <div class="pet-stat-label">年齡</div>
+                        <div id="petAgeDisplay" class="pet-stat-value">—</div>
                     </div>
-                    <button type="button" id="editPetButton" class="pet-edit-btn">✏️ 編輯</button>
-                </div>
-                <div class="pet-meta-row">
-                    <span class="pet-meta-label">體重</span>
-                    <span id="petWeightDisplay" class="pet-meta-value">— kg</span>
-                </div>
-                <div class="pet-meta-row">
-                    <span class="pet-meta-label">每日熱量</span>
-                    <span id="petCaloriesDisplay" class="pet-meta-value">— kcal</span>
+                    <div class="pet-stat">
+                        <div class="pet-stat-label">體重</div>
+                        <div id="petWeightDisplay" class="pet-stat-value">— kg</div>
+                    </div>
+                    <div class="pet-stat">
+                        <div class="pet-stat-label">每日熱量</div>
+                        <div id="petCaloriesDisplay" class="pet-stat-value">— kcal</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -193,7 +197,6 @@
 
         <!-- 結果顯示區域 -->
         <div id="resultsSection" class="results-section" style="display: none;">
-            <h2>📋 每餐分配結果</h2>
             <div id="mealResults"></div>
         </div>
 

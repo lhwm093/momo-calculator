@@ -582,7 +582,7 @@ function updatePetCardFromState() {
     const weight = parseFloat(catWeightInput.value) || 0;
 
     if (petNameDisplay) petNameDisplay.textContent = name;
-    if (petAgeDisplay) petAgeDisplay.textContent = ageText;
+    if (petAgeDisplay) petAgeDisplay.textContent = (ageText || '—').replace(/^年齡：/, '').trim() || '—';
     if (petWeightDisplay) petWeightDisplay.textContent = weight > 0 ? `${weight.toFixed(2)} kg` : '— kg';
     if (petCaloriesDisplay) petCaloriesDisplay.textContent = dailyCalories > 0 ? `${Math.round(dailyCalories)} kcal` : '— kcal';
 

@@ -1187,9 +1187,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 current.petPhotoOffset = petPhotoOffset;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
                 showSaveMessage('已儲存目前的照片構圖。');
-                closePhotoAdjust();
             } catch (e) {
                 showSaveMessage('儲存照片構圖失敗，請稍後再試。', true);
+            } finally {
+                closePhotoAdjust();
             }
         });
     }

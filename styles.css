@@ -1166,7 +1166,7 @@ select:focus {
 
     .pet-card {
         flex-direction: column;
-        padding: 12px 12px;
+        padding: 12px 12px 10px;
         gap: 10px;
         margin-bottom: 12px;
         align-items: stretch;
@@ -1174,11 +1174,10 @@ select:focus {
 
     .pet-avatar {
         width: 100%;
-        max-width: 140px;
-        height: 80px;
-        margin: 0 auto 6px;
+        height: 110px;
+        margin: 0 0 8px 0;
         border-radius: 18px;
-        padding: 6px;
+        padding: 6px 10px;
     }
 
     .pet-meta-name {
@@ -1199,14 +1198,6 @@ select:focus {
     .pet-stat {
         padding: 9px 9px;
         border-radius: 12px;
-    }
-
-    .pet-stat:nth-child(1) {
-        grid-column: span 2;
-    }
-
-    .pet-stat.pet-stat--status {
-        grid-column: span 2;
     }
 
     .pet-stat-label {

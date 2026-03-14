@@ -65,7 +65,7 @@ const infoModalBackdrop = document.getElementById('infoModalBackdrop');
 
 let petPhotoDataUrl = '';
 
-const ACTIVITY_LABELS = { lazy: '死懶鬼', normal: '一般', adhd: 'ADHD' };
+const ACTIVITY_LABELS = { lazy: '🥱 死懶鬼', normal: '😇 一般', adhd: '🤪 ADHD' };
 const AGE_BAND_LABELS = { kitten: '幼貓', junior: '幼貓', adult: '成貓', middle: '中年成貓', senior: '老年貓' };
 
 function showForm() {

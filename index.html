@@ -322,6 +322,25 @@
             </div>
         </div>
 
+        <!-- 照片位置調整彈窗 -->
+        <div id="photoAdjustModal" class="modal" aria-hidden="true">
+            <div class="modal-backdrop" id="photoAdjustBackdrop"></div>
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="photoAdjustTitle">
+                <button type="button" class="modal-close" id="photoAdjustClose" aria-label="關閉">✕</button>
+                <h2 id="photoAdjustTitle" class="modal-title">調整照片顯示範圍</h2>
+                <div class="modal-body">
+                    <div class="photo-adjust-preview">
+                        <img id="photoAdjustPreview" alt="預覽">
+                    </div>
+                    <div class="photo-adjust-controls">
+                        <label for="photoOffsetSlider">上下移動照片位置</label>
+                        <input type="range" id="photoOffsetSlider" min="0" max="100" value="50">
+                        <p class="photo-adjust-hint">向左拖拉看上方，向右拖拉看下方。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>

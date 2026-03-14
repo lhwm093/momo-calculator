@@ -62,8 +62,14 @@ const infoButton = document.getElementById('infoButton');
 const infoModal = document.getElementById('infoModal');
 const infoModalClose = document.getElementById('infoModalClose');
 const infoModalBackdrop = document.getElementById('infoModalBackdrop');
+const photoAdjustModal = document.getElementById('photoAdjustModal');
+const photoAdjustBackdrop = document.getElementById('photoAdjustBackdrop');
+const photoAdjustClose = document.getElementById('photoAdjustClose');
+const photoAdjustPreview = document.getElementById('photoAdjustPreview');
+const photoOffsetSlider = document.getElementById('photoOffsetSlider');
 
 let petPhotoDataUrl = '';
+let petPhotoOffset = 50;
 
 const ACTIVITY_LABELS = { lazy: '🥱 死懶鬼', normal: '😇 一般', adhd: '🤪 ADHD' };
 const AGE_BAND_LABELS = { kitten: '幼貓', junior: '幼貓', adult: '成貓', middle: '中年成貓', senior: '老年貓' };
@@ -588,6 +594,7 @@ function collectSettings() {
         petName: petNameInput ? petNameInput.value : '',
         petBirth: petBirthInput ? petBirthInput.value : '',
         petPhoto: petPhotoDataUrl || '',
+        petPhotoOffset,
         petSex: document.getElementById('petSex')?.value || '',
         neutered: document.getElementById('neutered')?.value || 'no',
         activity: document.getElementById('activity')?.value || 'normal',
@@ -641,6 +648,9 @@ function applySettings(settings) {
     if (activityEl) activityEl.value = settings.activity || 'normal';
     const healthStatusEl = document.getElementById('healthStatus');
     if (healthStatusEl) healthStatusEl.value = settings.healthStatus || 'healthy';
+    if (typeof settings.petPhotoOffset === 'number') {
+        petPhotoOffset = settings.petPhotoOffset;
+    }
     if (activitySlider) {
         const v = settings.activity === 'lazy' ? 0 : settings.activity === 'adhd' ? 2 : 1;
         activitySlider.value = String(v);
@@ -789,6 +799,14 @@ function formatPetAge(birthStr) {
 }
 
 // 更新寵物身分證卡片顯示
+function applyPhotoOffset(offset) {
+    petPhotoOffset = offset;
+    const pos = `50% ${offset}%`;
+    if (petPhotoDisplay) petPhotoDisplay.style.objectPosition = pos;
+    if (photoAdjustPreview) photoAdjustPreview.style.objectPosition = pos;
+}
+
+// 更新寵物身分證卡片顯示
 function updatePetCardFromState() {
     if (!petCard) return;
     const hasAnyInfo =
@@ -843,6 +861,7 @@ function updatePetCardFromState() {
     if (petPhotoDataUrl && petPhotoDisplay) {
         petPhotoDisplay.src = petPhotoDataUrl;
         petPhotoDisplay.style.display = 'block';
+        applyPhotoOffset(petPhotoOffset);
         if (petAvatarFallback) petAvatarFallback.style.display = 'none';
     } else {
         if (petPhotoDisplay) petPhotoDisplay.style.display = 'none';
@@ -1073,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 petPhotoDataUrl = ev.target.result;
+                petPhotoOffset = 50;
                 if (petPhotoPreview) {
                     petPhotoPreview.src = petPhotoDataUrl;
                     petPhotoPreview.style.display = 'block';
@@ -1106,6 +1126,43 @@ document.addEventListener('DOMContentLoaded', () => {
         infoButton.addEventListener('click', openModal);
         infoModalClose?.addEventListener('click', closeModal);
         infoModalBackdrop?.addEventListener('click', closeModal);
+    }
+
+    // 照片位置調整彈窗
+    const openPhotoAdjust = () => {
+        if (!photoAdjustModal || !petPhotoDataUrl) return;
+        photoAdjustModal.classList.add('is-open');
+        photoAdjustModal.setAttribute('aria-hidden', 'false');
+        if (photoAdjustPreview) {
+            photoAdjustPreview.src = petPhotoDataUrl;
+            applyPhotoOffset(petPhotoOffset);
+        }
+        if (photoOffsetSlider) {
+            photoOffsetSlider.value = String(petPhotoOffset);
+        }
+    };
+    const closePhotoAdjust = () => {
+        if (!photoAdjustModal) return;
+        photoAdjustModal.classList.remove('is-open');
+        photoAdjustModal.setAttribute('aria-hidden', 'true');
+    };
+    if (photoAdjustModal) {
+        photoAdjustClose?.addEventListener('click', closePhotoAdjust);
+        photoAdjustBackdrop?.addEventListener('click', closePhotoAdjust);
+    }
+    if (photoOffsetSlider) {
+        photoOffsetSlider.addEventListener('input', () => {
+            const v = parseInt(photoOffsetSlider.value, 10);
+            if (!Number.isNaN(v)) {
+                applyPhotoOffset(v);
+            }
+        });
+    }
+    if (petPhotoDisplay) {
+        petPhotoDisplay.addEventListener('click', openPhotoAdjust);
+    }
+    if (petAvatarFallback) {
+        petAvatarFallback.addEventListener('click', openPhotoAdjust);
     }
 
     const statusToggle = petCard?.querySelector('.pet-status-btn');

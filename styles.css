@@ -249,6 +249,18 @@ body {
     text-overflow: ellipsis;
 }
 
+.pet-stat-age {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.pet-stat-activity {
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #a0aec0;
+}
+
 #petAgeDisplay.pet-stat-value {
     color: #4a5568;
 }
@@ -1151,15 +1163,19 @@ select:focus {
     }
 
     .pet-card {
+        flex-direction: column;
         padding: 12px 12px;
-        gap: 12px;
+        gap: 10px;
         margin-bottom: 12px;
+        align-items: stretch;
     }
 
     .pet-avatar {
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
+        width: 100%;
+        max-width: 140px;
+        height: 80px;
+        margin: 0 auto 6px;
+        border-radius: 18px;
         padding: 6px;
     }
 
@@ -1184,6 +1200,10 @@ select:focus {
     }
 
     .pet-stat:nth-child(1) {
+        grid-column: span 2;
+    }
+
+    .pet-stat.pet-stat--status {
         grid-column: span 2;
     }
 

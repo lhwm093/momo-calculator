@@ -886,10 +886,29 @@ function showSaveMessage(text, isError = false) {
 function handleSaveSettings() {
     try {
         const data = collectSettings();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        updatePetCardFromState();
-        showSaveMessage('已儲存這次設定，下次打開會自動套用。');
-        hideForm();
+        const trySave = (payload) => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        };
+
+        try {
+            trySave(data);
+            updatePetCardFromState();
+            showSaveMessage('已儲存這次設定，下次打開會自動套用。');
+            hideForm();
+        } catch (innerErr) {
+            const msg = String(innerErr && innerErr.message || '').toLowerCase();
+            const isQuota =
+                innerErr && (innerErr.name === 'QuotaExceededError' || innerErr.name === 'NS_ERROR_DOM_QUOTA_REACHED' || msg.includes('quota'));
+            if (isQuota) {
+                // 若因照片過大導致超出瀏覽器儲存上限，改為不儲存照片再試一次
+                const slim = { ...data, petPhoto: '', petPhotoOffset: 50 };
+                trySave(slim);
+                showSaveMessage('設定已儲存，但照片檔案過大，無法一併儲存。', true);
+                hideForm();
+            } else {
+                throw innerErr;
+            }
+        }
     } catch (e) {
         showSaveMessage('儲存失敗，請稍後再試。', true);
     }

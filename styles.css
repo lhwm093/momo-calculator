@@ -28,23 +28,13 @@ body {
     position: relative;
 }
 
-/* 頂部：僅置中貓 Emoji */
+/* 頂部：僅置中說明按鈕 */
 .app-header {
     text-align: center;
     margin-bottom: 20px;
 }
 
-.header-emoji {
-    font-size: 48px;
-    line-height: 1;
-    display: inline-block;
-}
-
-/* 說明按鈕 📖 */
 .info-button {
-    position: absolute;
-    top: 18px;
-    left: 18px;
     width: 36px;
     height: 36px;
     border-radius: 999px;
@@ -1184,13 +1174,7 @@ select:focus {
         margin-bottom: 12px;
     }
 
-    .header-emoji {
-        font-size: 40px;
-    }
-
     .info-button {
-        top: 14px;
-        left: 12px;
         width: 32px;
         height: 32px;
         font-size: 16px;

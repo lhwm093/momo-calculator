@@ -560,6 +560,27 @@ select:focus {
     background: #fff;
 }
 
+/* 固定比例滑桿（風格與每餐比例卡一致）*/
+.ratio-fixed-section {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+}
+
+.ratio-fixed-section .section-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.ratio-fixed-section .section-hint {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
 /* 固定比例滑桿 */
 .ratio-slider-row {
     display: flex;

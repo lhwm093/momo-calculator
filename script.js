@@ -3,6 +3,7 @@ let dailyCalories = 0;
 
 // localStorage key
 const STORAGE_KEY = 'momo-kitten-settings-v2';
+const CHECKINS_KEY = 'momo-kitten-checkins-v1';
 
 // 比例選項（每餐乾/濕糧可選 0%、25%、50%、75%、100%）
 const RATIO_OPTIONS = [0, 25, 50, 75, 100];
@@ -71,6 +72,146 @@ const photoAdjustSave = document.getElementById('photoAdjustSave');
 
 let petPhotoDataUrl = '';
 let petPhotoOffset = 50;
+
+// 打卡（日界線為凌晨 2:00）
+let checkins = {};
+let calendarMonthCursor = new Date();
+let selectedDayKey = '';
+
+const firstMealTimeQuick = document.getElementById('firstMealTimeQuick');
+const calPrev = document.getElementById('calPrev');
+const calNext = document.getElementById('calNext');
+const calTitle = document.getElementById('calTitle');
+const calGrid = document.getElementById('calGrid');
+const calDetail = document.getElementById('calDetail');
+
+function getDayKey(date = new Date()) {
+    const shifted = new Date(date.getTime() - 2 * 60 * 60 * 1000);
+    const y = shifted.getFullYear();
+    const m = String(shifted.getMonth() + 1).padStart(2, '0');
+    const d = String(shifted.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function loadCheckins() {
+    try {
+        const raw = localStorage.getItem(CHECKINS_KEY);
+        checkins = raw ? JSON.parse(raw) : {};
+    } catch {
+        checkins = {};
+    }
+}
+
+function saveCheckins() {
+    localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins));
+}
+
+function getOrCreateDayRecord(dayKey) {
+    if (!checkins[dayKey]) checkins[dayKey] = { meals: {}, times: {}, totalMeals: 0, updatedAt: Date.now() };
+    return checkins[dayKey];
+}
+
+function toggleMealCheck(dayKey, mealNumber, mealTime, totalMeals) {
+    const rec = getOrCreateDayRecord(dayKey);
+    rec.totalMeals = totalMeals || rec.totalMeals || 0;
+    rec.times[String(mealNumber)] = mealTime;
+    const k = String(mealNumber);
+    rec.meals[k] = !rec.meals[k];
+    rec.updatedAt = Date.now();
+    saveCheckins();
+    renderCalendar();
+}
+
+function formatDayKeyLabel(dayKey) {
+    const [y, m, d] = dayKey.split('-');
+    return `${y}/${m}/${d}`;
+}
+
+function renderCalendar() {
+    if (!calGrid || !calTitle) return;
+    const base = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth(), 1);
+    const year = base.getFullYear();
+    const month = base.getMonth();
+    calTitle.textContent = `${year} 年 ${month + 1} 月`;
+
+    const firstDow = base.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayKey = getDayKey(new Date());
+
+    calGrid.innerHTML = '';
+
+    // 空白格
+    for (let i = 0; i < firstDow; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day';
+        cell.style.visibility = 'hidden';
+        calGrid.appendChild(cell);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day, 12, 0, 0);
+        const dayKey = getDayKey(date);
+        const rec = checkins[dayKey];
+        const hasAny = rec && rec.meals && Object.values(rec.meals).some(Boolean);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'cal-day' + (hasAny ? ' is-clickable' : '');
+        if (dayKey === selectedDayKey) cell.classList.add('is-selected');
+        cell.disabled = !hasAny;
+
+        const checkedCount = hasAny ? Object.values(rec.meals).filter(Boolean).length : 0;
+        const total = rec && rec.totalMeals ? rec.totalMeals : checkedCount;
+        cell.innerHTML = `<div class="cal-day-num">${day}</div>${hasAny ? `<div class="cal-day-badge">✅ ${checkedCount}/${total || checkedCount}</div>` : ''}`;
+
+        cell.addEventListener('click', () => {
+            selectedDayKey = dayKey;
+            renderCalendar();
+            renderDayDetail(dayKey);
+        });
+        calGrid.appendChild(cell);
+    }
+
+    // 預設顯示：今日（若有記錄）或最新有記錄的一天
+    if (!selectedDayKey || !checkins[selectedDayKey]) {
+        if (checkins[todayKey] && Object.values(checkins[todayKey].meals || {}).some(Boolean)) {
+            selectedDayKey = todayKey;
+        } else {
+            const keys = Object.keys(checkins).sort().reverse();
+            const first = keys.find((k) => Object.values(checkins[k]?.meals || {}).some(Boolean));
+            if (first) selectedDayKey = first;
+        }
+    }
+    if (selectedDayKey) renderDayDetail(selectedDayKey);
+}
+
+function renderDayDetail(dayKey) {
+    if (!calDetail) return;
+    const rec = checkins[dayKey];
+    if (!rec || !rec.meals) {
+        calDetail.textContent = '尚未有打卡紀錄。';
+        return;
+    }
+    const entries = Object.keys(rec.times || {}).sort((a, b) => Number(a) - Number(b));
+    const lines = entries.map((k) => {
+        const ok = !!rec.meals[k];
+        const time = rec.times[k] || '--:--';
+        return `${ok ? '✅' : '❌'} 第 ${k} 餐（${time}）`;
+    });
+    calDetail.innerHTML = `<strong>${formatDayKeyLabel(dayKey)}</strong><br>${lines.length ? lines.join('<br>') : '尚未有打卡紀錄。'}`;
+}
+
+function schedule2amRefresh() {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(2, 0, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    const ms = next.getTime() - now.getTime();
+    setTimeout(() => {
+        updateMealResultsRealtime();
+        renderCalendar();
+        schedule2amRefresh();
+    }, ms + 50);
+}
 
 const ACTIVITY_LABELS = { lazy: '🥱 死懶鬼', normal: '😇 一般', adhd: '🤪 ADHD' };
 const AGE_BAND_LABELS = { kitten: '幼貓', junior: '幼貓', adult: '成貓', middle: '中年成貓', senior: '老年貓' };
@@ -1036,12 +1177,20 @@ function displayResults(meals, skipScroll) {
         const dryFormatted = formatWeight(meal.dryGrams, meal.dryPackWeight);
         const wetFormatted = formatWeight(meal.wetGrams, meal.wetPackWeight);
         
+        const dayKey = getDayKey(new Date());
+        const rec = getOrCreateDayRecord(dayKey);
+        rec.totalMeals = meals.length;
+        rec.times[String(meal.number)] = meal.time;
+        saveCheckins();
+        const checked = !!(checkins[dayKey] && checkins[dayKey].meals && checkins[dayKey].meals[String(meal.number)]);
+
         mealCard.innerHTML = `
             <div class="meal-time-block">
                 <span class="meal-number">第 ${meal.number} 餐</span>
                 <div class="meal-time-circle">
                     <span class="meal-time">${meal.time}</span>
                 </div>
+                <button type="button" class="meal-check-btn ${checked ? 'is-checked' : ''}" data-meal="${meal.number}" data-time="${meal.time}" aria-label="打卡">${checked ? '✅' : '❌'}</button>
             </div>
             <div class="meal-portions">
                 <div class="detail-item">
@@ -1058,6 +1207,20 @@ function displayResults(meals, skipScroll) {
                 </div>
             </div>
         `;
+
+        const checkBtn = mealCard.querySelector('.meal-check-btn');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', () => {
+                const dk = getDayKey(new Date());
+                const num = parseInt(checkBtn.dataset.meal, 10);
+                const t = checkBtn.dataset.time || meal.time;
+                toggleMealCheck(dk, num, t, meals.length);
+                const isNowChecked = !!(checkins[dk]?.meals?.[String(num)]);
+                checkBtn.textContent = isNowChecked ? '✅' : '❌';
+                checkBtn.classList.toggle('is-checked', isNowChecked);
+                renderDayDetail(dk);
+            });
+        }
         
         mealResults.appendChild(mealCard);
     });
@@ -1074,6 +1237,7 @@ document.getElementById('calculatorForm').addEventListener('submit', (e) => {
 
 // 頁面載入：套用已儲存設定或初始化比例區塊與重量滑桿
 document.addEventListener('DOMContentLoaded', () => {
+    loadCheckins();
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -1094,6 +1258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMealsButtons();
     initWaterButtons();
     initMealIntervalSlider();
+    schedule2amRefresh();
     // 綁定其他會影響每餐結果的輸入
     const dryFoodInput = document.getElementById('dryFoodCalories');
     const wetFoodInput = document.getElementById('wetFoodCalories');
@@ -1230,6 +1395,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updatePetCardFromState();
+
+    // 主頁快速修改第一餐時間
+    const firstMealTimeInput = document.getElementById('firstMealTime');
+    if (firstMealTimeQuick && firstMealTimeInput) {
+        firstMealTimeQuick.value = firstMealTimeInput.value || '08:00';
+        firstMealTimeQuick.addEventListener('change', () => {
+            firstMealTimeInput.value = firstMealTimeQuick.value;
+            updateMealResultsRealtime();
+            // 自動保存（不跳出表單）
+            try {
+                const data = collectSettings();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch {}
+        });
+    }
+
+    // 日曆導覽
+    if (calPrev) calPrev.addEventListener('click', () => {
+        calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() - 1, 1);
+        renderCalendar();
+    });
+    if (calNext) calNext.addEventListener('click', () => {
+        calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + 1, 1);
+        renderCalendar();
+    });
+    calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    renderCalendar();
 });
 
 // 儲存／重設按鈕綁定

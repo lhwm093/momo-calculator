@@ -248,7 +248,26 @@
 
         <!-- 結果顯示區域 -->
         <div id="resultsSection" class="results-section" style="display: none;">
+            <div class="results-topbar">
+                <div class="results-topbar-left">
+                    <span class="results-topbar-label">第一餐時間</span>
+                    <input type="time" id="firstMealTimeQuick" class="results-time-input">
+                </div>
+            </div>
             <div id="mealResults"></div>
+
+            <div class="checkin-calendar">
+                <div class="calendar-header">
+                    <button type="button" id="calPrev" class="cal-nav">‹</button>
+                    <div id="calTitle" class="cal-title">—</div>
+                    <button type="button" id="calNext" class="cal-nav">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+                </div>
+                <div id="calGrid" class="calendar-grid"></div>
+                <div id="calDetail" class="calendar-detail"></div>
+            </div>
         </div>
 
         <!-- 說明彈窗 -->

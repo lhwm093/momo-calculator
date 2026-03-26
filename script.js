@@ -1262,13 +1262,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 綁定其他會影響每餐結果的輸入
     const dryFoodInput = document.getElementById('dryFoodCalories');
     const wetFoodInput = document.getElementById('wetFoodCalories');
-    const firstMealTimeInput = document.getElementById('firstMealTime');
+    const firstMealTimeInputEl = document.getElementById('firstMealTime');
     const dryPackInput = document.getElementById('dryPackWeight');
     const wetPackInput = document.getElementById('wetPackWeight');
-    [dryFoodInput, wetFoodInput, firstMealTimeInput, dryPackInput, wetPackInput].forEach((el) => {
+    [dryFoodInput, wetFoodInput, firstMealTimeInputEl, dryPackInput, wetPackInput].forEach((el) => {
         if (el) el.addEventListener('input', updateMealResultsRealtime);
     });
-    if (firstMealTimeInput) firstMealTimeInput.addEventListener('change', updateMealResultsRealtime);
+    if (firstMealTimeInputEl) firstMealTimeInputEl.addEventListener('change', updateMealResultsRealtime);
 
     if (petPhotoInput) {
         petPhotoInput.addEventListener('change', (e) => {
@@ -1397,11 +1397,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePetCardFromState();
 
     // 主頁快速修改第一餐時間
-    const firstMealTimeInput = document.getElementById('firstMealTime');
-    if (firstMealTimeQuick && firstMealTimeInput) {
-        firstMealTimeQuick.value = firstMealTimeInput.value || '08:00';
+    if (firstMealTimeQuick && firstMealTimeInputEl) {
+        firstMealTimeQuick.value = firstMealTimeInputEl.value || '08:00';
         firstMealTimeQuick.addEventListener('change', () => {
-            firstMealTimeInput.value = firstMealTimeQuick.value;
+            firstMealTimeInputEl.value = firstMealTimeQuick.value;
             updateMealResultsRealtime();
             // 自動保存（不跳出表單）
             try {
